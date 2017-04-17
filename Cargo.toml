@@ -1,0 +1,7 @@
+[package]
+name = "one_d_checkers"
+version = "0.1.0"
+authors = ["Patrick Gallagher <patrickj@cpgallagher.com>"]
+
+[dependencies]
+rand = "0.3"
