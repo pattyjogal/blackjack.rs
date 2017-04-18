@@ -147,7 +147,7 @@ fn hit(gameState: &mut Game) -> u32
     let mut sum = 0;
     for card in &gameState.player.hand {
         sum += card.rank;
-        println!("{}", render_card(&card));
+        println!(render_card(&card));
     }
 
     if (sum > 21){
@@ -167,33 +167,19 @@ fn strip_input(s: &mut String)
 
 fn render_card(card: &Card) -> String
 {
-    let mut number = "";
-
-    if card.rank > 10 {
-        number = format!("{} ", card.rank);
-    } else if card.rank == 10 {
-        number = "10"
-    } else if card.rank == 11 {
-        number = "J "
-    } else if card.rank == 12 {
-        number = "Q "
-    } else if card.rank == 13 {
-        number = "K "
-    } 
-                                    
-    format!( "┌─────────┐
-│{}       │
-│         │
-│         │
-│    {}   │
-│         │
-│         │
-│       {}│
-└─────────┘", card.rank, match card.suit {
-                                            0 => "♥",
-                                            1 => "♦",
-                                            2 => "♣",
-                                            3 => "♠",
-                                            _ => " "
-                                            }, card.rank)
+   format!( "┌─────────┐
+             │{}       │
+             │         │
+             │         │
+             │    {}   │
+             │         │
+             │         │
+             │       {}│
+             └─────────┘", card.rank, match card.suit {
+                                                        0 => "♥",
+                                                        1 => "♦",
+                                                        2 => "♣",
+                                                        3 => "♠",
+                                                        _ => " "
+                                                        }, card.rank)
 }
