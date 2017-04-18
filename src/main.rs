@@ -16,11 +16,13 @@ struct Card
     suit: u32,
     rank: u32
 }
-struct Game
+
+struct Game<'a>
 {
     deck: Vec<Card>,
-    player: Player,
-    choice: Choice
+    players: Vec<Player>,
+    choice: Choice,
+    currentPlayer: &'a Player
 }
 struct Player
 {
@@ -29,26 +31,84 @@ struct Player
     money: u32
 }
 
+impl <'a> Game<'a> {
+    pub fn new(players: Vec<Player>) -> Game<'a> {
+        Game {
+            deck: Vec::new(),
+            players: players,
+            choice: Choice::None,
+            currentPlayer: &players[0]
+        }
+    }
+    // Builds a deck with the standard 52 cards
+    pub fn build_deck(&mut self)
+    {
+        let mut unshuffled_deck:Vec<Card> = Vec::new();
+
+        // We have to build the deck first!
+        for s in 0..4 {
+            for r in 0..13 {
+                unshuffled_deck.push(Card {suit:s, rank:r});
+            }
+        }
+        // Remove the cards from the unshuffled deck and put
+        // them at random into the game deck
+        let mut length = unshuffled_deck.len();
+        while length > 0 {
+            self.deck.push(unshuffled_deck.remove(rand::thread_rng().gen_range(0, length)));
+            length -= 1;
+        }
+        println!("{:?}", self.deck);
+        
+    }
+
+    // A simple function to give a card off of the top of the deck
+    // to the player
+    fn deal(&mut self)
+    {
+        self.currentPlayer.hand.push(self.deck.pop().unwrap());
+        println!("Your hand: {:?}", &self.currentPlayer.hand);
+
+    }
+
+    //
+    fn hit(&self) -> u32
+    {
+        let mut sum = 0;
+        for card in &self.currentPlayer.hand {
+            sum += card.rank;
+            
+        }
+
+        if (sum > 21){
+            println!("That's a loss!");
+            return 0
+        }
+        
+        println!("Sum: {}", sum);
+        1
+
+    }
+}
+
 fn main()
 {
-    let mut gameState: Game = Game {
-        deck: Vec::new(),
-        player: Player {
+    // TODO: See if there are constructors in Rust
+    let mut gameState = Game::new(vec!(
+        Player {
             name: "Patrick".to_string(),
             hand: Vec::new(),
             money: 0
-        },
-        choice: Choice::None
-    };
-        
-    build_deck(&mut gameState);
-    deal(&mut gameState);
-    deal(&mut gameState);
+        }));
+            
+    gameState.build_deck();
+    gameState.deal();
+    gameState.deal();
 
     loop {
         println!("Hello friend! I'm your dealer for today's game of Blackjack");
         println!("I'm gonna show you your cards real fast:");
-        println!("Your hand: {:?}", gameState.player.hand);
+        println!("Your hand: {:?}", gameState.currentPlayer.hand);
         println!("Ok, so would you like to [h]it or [s]tay?");
         
         let mut choice = String::new();
@@ -73,10 +133,13 @@ fn main()
                     println!("So I'm too lazy to implement betting at this moment, so we're gonna bet like 1 dollar");
                     let bet = 1;
                     'hitLoop: loop {
-                        if hit(&mut gameState) == 0 {
+                        for card in &gameState.currentPlayer.hand {
+                            print!("{}", render_card(&card));
+                        }
+                        if gameState.hit() == 0 {
                             break
                         }
-                        deal(&mut gameState);
+                        gameState.deal();
                         let mut cont = String::new();
 
                         println!("Hit again? [y]es or [n]o?");
@@ -98,10 +161,10 @@ fn main()
 
                     }
                     // Empty the hand now
-                    gameState.player.hand = Vec::new();
+                    gameState.currentPlayer.hand = Vec::new();
                     // And redeal
-                    deal(&mut gameState);
-                    deal(&mut gameState);
+                    gameState.deal();
+                    gameState.deal();
                     println!("Press enter to continue...");
                 },
                 _ => break
@@ -112,53 +175,11 @@ fn main()
     }
 }
 
-fn build_deck(gameState: &mut Game)
-{
-    let mut unshuffled_deck:Vec<Card> = Vec::new();
 
-    // We have to build the deck first!
-    for s in 0..4 {
-        for r in 0..13 {
-            unshuffled_deck.push(Card {suit:s, rank:r});
-        }
-    }
-    // Remove the cards from the unshuffled deck and put
-    // them at random into the game deck
-    let mut length = unshuffled_deck.len();
-    while length > 0 {
-        gameState.deck.push(unshuffled_deck.remove(rand::thread_rng().gen_range(0, length)));
-        length -= 1;
-    }
-    println!("{:?}", gameState.deck);
-     
-}
 
-// A simple function to give a card off of the top of the deck
-// to the player
-fn deal(gameState: &mut Game)
-{
-    gameState.player.hand.push(gameState.deck.pop().unwrap());
-    println!("Your hand: {:?}", gameState.player.hand);
 
-}
 
-fn hit(gameState: &mut Game) -> u32
-{
-    let mut sum = 0;
-    for card in &gameState.player.hand {
-        sum += card.rank;
-        println!("{}", render_card(&card));
-    }
 
-    if (sum > 21){
-        println!("That's a loss!");
-        return 0
-    }
-    
-    println!("Sum: {}", sum);
-    1
-
-}
 
 fn strip_input(s: &mut String)
 {
@@ -167,18 +188,18 @@ fn strip_input(s: &mut String)
 
 fn render_card(card: &Card) -> String
 {
-    let mut number = "";
+    let mut number = String::new();
 
-    if card.rank > 10 {
+    if card.rank < 10 {
         number = format!("{} ", card.rank);
     } else if card.rank == 10 {
-        number = "10"
+        number = "10".to_string()
     } else if card.rank == 11 {
-        number = "J "
+        number = "J ".to_string()
     } else if card.rank == 12 {
-        number = "Q "
+        number = "Q ".to_string()
     } else if card.rank == 13 {
-        number = "K "
+        number = "K ".to_string()
     } 
                                     
     format!( "┌─────────┐
@@ -189,11 +210,11 @@ fn render_card(card: &Card) -> String
 │         │
 │         │
 │       {}│
-└─────────┘", card.rank, match card.suit {
-                                            0 => "♥",
-                                            1 => "♦",
-                                            2 => "♣",
-                                            3 => "♠",
+└─────────┘", number, match card.suit {
+                                            0 => "♥ ",
+                                            1 => "♦ ",
+                                            2 => "♣ ",
+                                            3 => "♠ ",
                                             _ => " "
-                                            }, card.rank)
+                                            }, number)
 }
