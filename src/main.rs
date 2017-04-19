@@ -3,32 +3,28 @@ use rand::Rng;
 use std::io;
 
 #[derive(Debug)]
-enum Choice
-{
+enum Choice {
     Hit,
     Stay,
-    None
+    None,
 }
 
 #[derive(Debug, Copy, Clone)]
-struct Card
-{
+struct Card {
     suit: u32,
-    rank: u32
+    rank: u32,
 }
 
-struct Game
-{
+struct Game {
     deck: Vec<Card>,
     players: Vec<Player>,
     choice: Choice,
-    current_player_index: usize
+    current_player_index: usize,
 }
-struct Player
-{
+struct Player {
     name: String,
     hand: Vec<Card>,
-    money: u32
+    money: u32,
 }
 
 impl Game {
@@ -37,52 +33,51 @@ impl Game {
             deck: Vec::new(),
             players: players,
             choice: Choice::None,
-            current_player_index: 0
+            current_player_index: 0,
         }
     }
     // Builds a deck with the standard 52 cards
-    pub fn build_deck(&mut self)
-    {
-        let mut unshuffled_deck:Vec<Card> = Vec::new();
+    pub fn build_deck(&mut self) {
+        let mut unshuffled_deck: Vec<Card> = Vec::new();
 
         // We have to build the deck first!
         for s in 0..4 {
             for r in 0..13 {
-                unshuffled_deck.push(Card {suit:s, rank:r});
+                unshuffled_deck.push(Card { suit: s, rank: r });
             }
         }
         // Remove the cards from the unshuffled deck and put
         // them at random into the game deck
         let mut length = unshuffled_deck.len();
         while length > 0 {
-            self.deck.push(unshuffled_deck.remove(rand::thread_rng().gen_range(0, length)));
+            self.deck
+                .push(unshuffled_deck.remove(rand::thread_rng().gen_range(0, length)));
             length -= 1;
         }
-        
+
     }
 
     // A simple function to give a card off of the top of the deck
     // to the player
-    fn deal(&mut self)
-    {
+    fn deal(&mut self) {
         let next_card = self.deck.pop().unwrap();
         self.get_player().hand.push(next_card);
     }
 
-    //
-    fn hit(&mut self) -> u32
-    {
+    // The hit function that adds a card to the players hand, and kills them off
+    // if they go over 21
+    fn hit(&mut self) -> u32 {
         let mut sum = 0;
         for card in &self.get_player().hand {
             sum += card.rank;
-            
+
         }
 
-        if (sum > 21){
+        if (sum > 21) {
             println!("That's a loss!");
-            return 0
+            return 0;
         }
-        
+
         1
 
     }
@@ -99,15 +94,12 @@ impl Game {
     }
 }
 
-fn main()
-{
-    let mut game_state = Game::new(vec!(
-        Player {
-            name: "Patrick".to_string(),
-            hand: Vec::new(),
-            money: 0
-        }));
-            
+fn main() {
+    let mut game_state = Game::new(vec![Player {
+                                            name: "Patrick".to_string(),
+                                            hand: Vec::new(),
+                                            money: 0,
+                                        }]);
     game_state.build_deck();
     game_state.deal();
     game_state.deal();
@@ -118,82 +110,76 @@ fn main()
         println!("I'm gonna show you your cards real fast:");
         game_state.print_cards();
         println!("Ok, so would you like to [h]it or [s]tay?");
-        
+
         let mut choice = String::new();
 
         loop {
-            io::stdin().read_line(&mut choice)
+            io::stdin()
+                .read_line(&mut choice)
                 .expect("Failed to read line");
 
             choice = choice.to_lowercase();
-            
+
             strip_input(&mut choice);
             game_state.choice = match choice.as_str() {
                 "h" | "hit" => Choice::Hit,
                 "s" | "stay" => Choice::Stay,
-                _ => {Choice::None; continue }
+                _ => {
+                    Choice::None;
+                    continue;
+                }
             };
             break;
         }
-            match game_state.choice {
-                Choice::Hit => {
-                    println!("Aww yes! Let's play!");
-                    println!("So I'm too lazy to implement betting at this moment, so we're gonna bet like 1 dollar");
-                    let bet = 1;
-                    'hitLoop: loop {
-                        if game_state.hit() == 0 {
-                            break
-                        }
-                        game_state.deal();
-                        game_state.print_cards();
-                        let mut cont = String::new();
-
-                        println!("Hit again? [y]es or [n]o?");
-
-                        'input: loop {
-                            io::stdin().read_line(&mut cont)
-                                .expect("Failed to read line");
-
-                            cont = cont.to_lowercase();
-
-                            strip_input(&mut cont);
-                            
-                            match cont.as_str()  {
-                                "y" | "yes" => break 'input,
-                                "n" | "no"  => break 'hitLoop,
-                                // Clear cont so we can input "y"/"n" again if we fat finger it the first time
-                                _ => cont = String::new()
-                            }                          
-                        }
-
+        match game_state.choice {
+            Choice::Hit => {
+                println!("Aww yes! Let's play!");
+                println!("So I'm too lazy to implement betting at this moment, so we're gonna bet like 1 dollar");
+                let bet = 1;
+                'hitLoop: loop {
+                    if game_state.hit() == 0 {
+                        break;
                     }
-                    // Empty the hand now
-                    game_state.get_player().hand = Vec::new();
-                    // And redeal
                     game_state.deal();
-                    game_state.deal();
-                },
-                _ => break
-            }
-            
-        
+                    game_state.print_cards();
+                    let mut cont = String::new();
 
+                    println!("Hit again? [y]es or [n]o?");
+
+                    'input: loop {
+                        io::stdin()
+                            .read_line(&mut cont)
+                            .expect("Failed to read line");
+
+                        cont = cont.to_lowercase();
+
+                        strip_input(&mut cont);
+
+                        match cont.as_str() {
+                            "y" | "yes" => break 'input,
+                            "n" | "no" => break 'hitLoop,
+                            // Clear cont so we can input "y"/"n" again if we fat finger it the first time
+                            _ => cont = String::new(),
+                        }
+                    }
+
+                }
+                // Empty the hand now
+                game_state.get_player().hand = Vec::new();
+                // And redeal
+                game_state.deal();
+                game_state.deal();
+            }
+            _ => break,
+        }
     }
 }
 
-
-
-
-
-
-
-fn strip_input(s: &mut String)
-{
+fn strip_input(s: &mut String) {
     s.pop();
 }
 
-fn render_card(card: &Card) -> String
-{
+fn render_card(card: &Card) -> String {
     let mut number = String::new();
 
     if card.rank < 10 {
@@ -206,9 +192,9 @@ fn render_card(card: &Card) -> String
         number = "Q ".to_string()
     } else if card.rank == 13 {
         number = "K ".to_string()
-    } 
-                                    
-    format!( "┌─────────┐
+    }
+
+    format!("┌─────────┐
 │{}       │
 │         │
 │         │
@@ -216,11 +202,14 @@ fn render_card(card: &Card) -> String
 │         │
 │         │
 │       {}│
-└─────────┘", number, match card.suit {
-                                            0 => "♥ ",
-                                            1 => "♦ ",
-                                            2 => "♣ ",
-                                            3 => "♠ ",
-                                            _ => " "
-                                            }, number)
+└─────────┘",
+            number,
+            match card.suit {
+                0 => "♥ ",
+                1 => "♦ ",
+                2 => "♣ ",
+                3 => "♠ ",
+                _ => " ",
+            },
+            number)
 }
