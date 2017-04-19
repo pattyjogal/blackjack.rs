@@ -42,7 +42,7 @@ impl Game {
 
         // We have to build the deck first!
         for s in 0..4 {
-            for r in 0..13 {
+            for r in 1..14 {
                 unshuffled_deck.push(Card { suit: s, rank: r });
             }
         }
@@ -92,6 +92,21 @@ impl Game {
             println!("{}", render_card(&card));
         }
     }
+
+    // Move to the next player by incrementing current_player_index
+    // If we got to the last player, then we break the cycle
+    fn next_player(&mut self) -> u32 {
+        if self.current_player_index < self.players.len() - 1 {
+            self.current_player_index += 1;
+            return 1
+        }
+
+        0
+    }
+
+    fn win_check(&self) -> Player {
+        unimplemented!();
+    }
 }
 
 fn main() {
@@ -99,12 +114,19 @@ fn main() {
                                             name: "Patrick".to_string(),
                                             hand: Vec::new(),
                                             money: 0,
+                                        },
+                                        Player {
+                                            name: "Dipshit".to_string(),
+                                            hand: Vec::new(),
+                                            money: 0,
                                         }]);
     game_state.build_deck();
-    game_state.deal();
-    game_state.deal();
+  
 
     loop {
+        // Deal this user their cards
+        game_state.deal();
+        game_state.deal();
         println!("Alright, {}, it's your turn!", game_state.get_player().name);
         // Let's show the user their cards
         println!("I'm gonna show you your cards real fast:");
@@ -165,13 +187,15 @@ fn main() {
 
                 }
                 // Empty the hand now
-                game_state.get_player().hand = Vec::new();
-                // And redeal
-                game_state.deal();
-                game_state.deal();
+                // game_state.get_player().hand = Vec::new();
+                // Move to the next player
+                game_state.next_player();
+
             },
             Choice::Stay => {
-                game_state
+                if game_state.next_player() == 0 {
+                    break
+                }
             },
             _ => break,
         }
@@ -185,7 +209,9 @@ fn strip_input(s: &mut String) {
 fn render_card(card: &Card) -> String {
     let mut number = String::new();
 
-    if card.rank < 10 {
+    if card.rank == 1 {
+        number = "A ".to_string();
+    } else if card.rank < 10 {
         number = format!("{} ", card.rank);
     } else if card.rank == 10 {
         number = "10".to_string()
@@ -216,3 +242,4 @@ fn render_card(card: &Card) -> String {
             },
             number)
 }
+
