@@ -92,6 +92,14 @@ impl Game {
             println!("{}", render_card(&card));
         }
     }
+
+    // Move to the next player by incrementing current_player_index
+    // If we got to the last player, then we break the cycle
+    fn next_player(&mut self) {
+        if self.current_player_index < self.players.len {
+            self.current_player_index += 1;
+        }
+    }
 }
 
 fn main() {
@@ -176,6 +184,7 @@ fn main() {
 }
 
 fn strip_input(s: &mut String) {
+    s.pop();
     s.pop();
 }
 
