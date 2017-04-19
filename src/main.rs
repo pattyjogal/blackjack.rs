@@ -58,7 +58,6 @@ impl Game {
             self.deck.push(unshuffled_deck.remove(rand::thread_rng().gen_range(0, length)));
             length -= 1;
         }
-        println!("{:?}", self.deck);
         
     }
 
@@ -68,8 +67,6 @@ impl Game {
     {
         let next_card = self.deck.pop().unwrap();
         self.get_player().hand.push(next_card);
-        println!("Your hand: {:?}", &self.get_player().hand);
-
     }
 
     //
@@ -86,19 +83,24 @@ impl Game {
             return 0
         }
         
-        println!("Sum: {}", sum);
         1
 
     }
 
+    // Gets a mutable reference to the current player
     fn get_player(&mut self) -> &mut Player {
         &mut self.players[self.current_player_index]
+    }
+
+    fn print_cards(&mut self) {
+        for card in &self.get_player().hand {
+            println!("{}", render_card(&card));
+        }
     }
 }
 
 fn main()
 {
-    // TODO: See if there are constructors in Rust
     let mut game_state = Game::new(vec!(
         Player {
             name: "Patrick".to_string(),
@@ -111,9 +113,10 @@ fn main()
     game_state.deal();
 
     loop {
-        println!("Hello friend! I'm your dealer for today's game of Blackjack");
+        println!("Alright, {}, it's your turn!", game_state.get_player().name);
+        // Let's show the user their cards
         println!("I'm gonna show you your cards real fast:");
-        println!("Your hand: {:?}", game_state.get_player().hand);
+        game_state.print_cards();
         println!("Ok, so would you like to [h]it or [s]tay?");
         
         let mut choice = String::new();
@@ -131,20 +134,17 @@ fn main()
                 "s" | "stay" => Choice::Stay,
                 _ => Choice::None
             };
-            println!("{:?}", game_state.choice);
             match game_state.choice {
                 Choice::Hit => {
                     println!("Aww yes! Let's play!");
                     println!("So I'm too lazy to implement betting at this moment, so we're gonna bet like 1 dollar");
                     let bet = 1;
                     'hitLoop: loop {
-                        for card in &game_state.get_player().hand {
-                            print!("{}", render_card(&card));
-                        }
                         if game_state.hit() == 0 {
                             break
                         }
                         game_state.deal();
+                        game_state.print_cards();
                         let mut cont = String::new();
 
                         println!("Hit again? [y]es or [n]o?");
