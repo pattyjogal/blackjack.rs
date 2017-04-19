@@ -17,12 +17,12 @@ struct Card
     rank: u32
 }
 
-struct Game<'a>
+struct Game
 {
     deck: Vec<Card>,
     players: Vec<Player>,
     choice: Choice,
-    currentPlayer: &'a Player
+    current_player_index: usize
 }
 struct Player
 {
@@ -31,13 +31,13 @@ struct Player
     money: u32
 }
 
-impl <'a> Game<'a> {
-    pub fn new(players: Vec<Player>) -> Game<'a> {
+impl Game {
+    pub fn new(players: Vec<Player>) -> Game {
         Game {
             deck: Vec::new(),
             players: players,
             choice: Choice::None,
-            currentPlayer: &players[0]
+            current_player_index: 0
         }
     }
     // Builds a deck with the standard 52 cards
@@ -66,16 +66,17 @@ impl <'a> Game<'a> {
     // to the player
     fn deal(&mut self)
     {
-        self.currentPlayer.hand.push(self.deck.pop().unwrap());
-        println!("Your hand: {:?}", &self.currentPlayer.hand);
+        let next_card = self.deck.pop().unwrap();
+        self.get_player().hand.push(next_card);
+        println!("Your hand: {:?}", &self.get_player().hand);
 
     }
 
     //
-    fn hit(&self) -> u32
+    fn hit(&mut self) -> u32
     {
         let mut sum = 0;
-        for card in &self.currentPlayer.hand {
+        for card in &self.get_player().hand {
             sum += card.rank;
             
         }
@@ -89,26 +90,30 @@ impl <'a> Game<'a> {
         1
 
     }
+
+    fn get_player(&mut self) -> &mut Player {
+        &mut self.players[self.current_player_index]
+    }
 }
 
 fn main()
 {
     // TODO: See if there are constructors in Rust
-    let mut gameState = Game::new(vec!(
+    let mut game_state = Game::new(vec!(
         Player {
             name: "Patrick".to_string(),
             hand: Vec::new(),
             money: 0
         }));
             
-    gameState.build_deck();
-    gameState.deal();
-    gameState.deal();
+    game_state.build_deck();
+    game_state.deal();
+    game_state.deal();
 
     loop {
         println!("Hello friend! I'm your dealer for today's game of Blackjack");
         println!("I'm gonna show you your cards real fast:");
-        println!("Your hand: {:?}", gameState.currentPlayer.hand);
+        println!("Your hand: {:?}", game_state.get_player().hand);
         println!("Ok, so would you like to [h]it or [s]tay?");
         
         let mut choice = String::new();
@@ -121,25 +126,25 @@ fn main()
             
             println!("Choice: {}", choice.as_str());
             strip_input(&mut choice);
-            gameState.choice = match choice.as_str() {
+            game_state.choice = match choice.as_str() {
                 "h" | "hit" => Choice::Hit,
                 "s" | "stay" => Choice::Stay,
                 _ => Choice::None
             };
-            println!("{:?}", gameState.choice);
-            match gameState.choice {
+            println!("{:?}", game_state.choice);
+            match game_state.choice {
                 Choice::Hit => {
                     println!("Aww yes! Let's play!");
                     println!("So I'm too lazy to implement betting at this moment, so we're gonna bet like 1 dollar");
                     let bet = 1;
                     'hitLoop: loop {
-                        for card in &gameState.currentPlayer.hand {
+                        for card in &game_state.get_player().hand {
                             print!("{}", render_card(&card));
                         }
-                        if gameState.hit() == 0 {
+                        if game_state.hit() == 0 {
                             break
                         }
-                        gameState.deal();
+                        game_state.deal();
                         let mut cont = String::new();
 
                         println!("Hit again? [y]es or [n]o?");
@@ -161,10 +166,10 @@ fn main()
 
                     }
                     // Empty the hand now
-                    gameState.currentPlayer.hand = Vec::new();
+                    game_state.get_player().hand = Vec::new();
                     // And redeal
-                    gameState.deal();
-                    gameState.deal();
+                    game_state.deal();
+                    game_state.deal();
                     println!("Press enter to continue...");
                 },
                 _ => break
