@@ -169,7 +169,10 @@ fn main() {
                 // And redeal
                 game_state.deal();
                 game_state.deal();
-            }
+            },
+            Choice::Stay => {
+                game_state
+            },
             _ => break,
         }
     }
@@ -209,7 +212,7 @@ fn render_card(card: &Card) -> String {
                 1 => "♦ ",
                 2 => "♣ ",
                 3 => "♠ ",
-                _ => " ",
+                _ => "  ",
             },
             number)
 }
