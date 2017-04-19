@@ -177,7 +177,8 @@ fn main() {
                 // And redeal
                 game_state.deal();
                 game_state.deal();
-            }
+            },
+            Choice::Stay => 
             _ => break,
         }
     }
