@@ -127,13 +127,14 @@ fn main()
 
             choice = choice.to_lowercase();
             
-            println!("Choice: {}", choice.as_str());
             strip_input(&mut choice);
             game_state.choice = match choice.as_str() {
                 "h" | "hit" => Choice::Hit,
                 "s" | "stay" => Choice::Stay,
-                _ => Choice::None
+                _ => {Choice::None; continue }
             };
+            break;
+        }
             match game_state.choice {
                 Choice::Hit => {
                     println!("Aww yes! Let's play!");
@@ -160,7 +161,8 @@ fn main()
                             match cont.as_str()  {
                                 "y" | "yes" => break 'input,
                                 "n" | "no"  => break 'hitLoop,
-                                _ => continue
+                                // Clear cont so we can input "y"/"n" again if we fat finger it the first time
+                                _ => cont = String::new()
                             }                          
                         }
 
@@ -170,12 +172,11 @@ fn main()
                     // And redeal
                     game_state.deal();
                     game_state.deal();
-                    println!("Press enter to continue...");
                 },
                 _ => break
             }
             
-        }
+        
 
     }
 }
