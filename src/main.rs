@@ -67,11 +67,7 @@ impl Game {
     // The hit function that adds a card to the players hand, and kills them off
     // if they go over 21
     fn hit(&mut self) -> u32 {
-        let mut sum = 0;
-        for card in &self.get_player().hand {
-            sum += card.rank;
-
-        }
+        let mut sum = sum_cards(&self.get_player().hand);
 
         if (sum > 21) {
             println!("That's a loss!");
@@ -105,8 +101,22 @@ impl Game {
     }
 
     fn win_check(&self) -> Player {
-        unimplemented!();
+        let mut current_winner = None;
+        for player in self.players {
+            let sum = sum_cards(player);
+            if !current_winner {
+                current_winner = (sum, player);
+            } else {
+                if current_winner[0] < sum {
+                    current_winner(sum, player);
+                }
+            }
+            
+        }
+
+        current_winner[1]
     }
+
 }
 
 fn main() {
@@ -159,10 +169,12 @@ fn main() {
                 println!("So I'm too lazy to implement betting at this moment, so we're gonna bet like 1 dollar");
                 let bet = 1;
                 'hitLoop: loop {
+
                     if game_state.hit() == 0 {
                         break;
                     }
                     game_state.deal();
+
                     game_state.print_cards();
                     let mut cont = String::new();
 
@@ -204,6 +216,7 @@ fn main() {
 
 fn strip_input(s: &mut String) {
     s.pop();
+    s.pop();
 }
 
 fn render_card(card: &Card) -> String {
@@ -243,3 +256,11 @@ fn render_card(card: &Card) -> String {
             number)
 }
 
+fn sum_cards(cards: &Vec<Card>) -> u32 {
+    let mut sum = 0;
+    for card in cards{
+        sum += card.rank;
+    }
+    println!("{}", sum);
+    sum
+}
