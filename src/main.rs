@@ -1,6 +1,8 @@
 extern crate rand;
 use rand::Rng;
 use std::io;
+use std::thread;
+use std::time::Duration;
 
 #[derive(Debug)]
 enum Choice {
@@ -12,7 +14,7 @@ enum Choice {
 #[derive(Debug, Copy, Clone)]
 struct Card {
     suit: u32,
-    rank: u32,
+    rank: i32,
 }
 
 struct Game {
@@ -70,7 +72,14 @@ impl Game {
         let mut sum = sum_cards(&self.get_player().hand);
 
         if (sum > 21) {
-            println!("That's a loss!");
+            println!(r" /$$$$$$$  /$$   /$$  /$$$$$$  /$$$$$$$$ /$$$$$$$$ /$$$$$$$  /$$
+| $$__  $$| $$  | $$ /$$__  $$|__  $$__/| $$_____/| $$__  $$| $$
+| $$  \ $$| $$  | $$| $$  \__/   | $$   | $$      | $$  \ $$| $$
+| $$$$$$$ | $$  | $$|  $$$$$$    | $$   | $$$$$   | $$  | $$| $$
+| $$__  $$| $$  | $$ \____  $$   | $$   | $$__/   | $$  | $$|__/
+| $$  \ $$| $$  | $$ /$$  \ $$   | $$   | $$      | $$  | $$    
+| $$$$$$$/|  $$$$$$/|  $$$$$$/   | $$   | $$$$$$$$| $$$$$$$/ /$$
+|_______/  \______/  \______/    |__/   |________/|_______/ |__/");
             return 0;
         }
 
@@ -100,26 +109,42 @@ impl Game {
         0
     }
 
-    fn win_check(&self) -> Player {
-        let mut current_winner = None;
-        for player in self.players {
-            let sum = sum_cards(player);
-            if !current_winner {
-                current_winner = (sum, player);
-            } else {
-                if current_winner[0] < sum {
-                    current_winner(sum, player);
-                }
-            }
-            
+    fn win_check(&self) -> String {
+        let mut current_winner = (-100000, &"".to_string());
+        for player in &self.players {
+            let sum = sum_cards(&player.hand);
+            if current_winner.0 < sum {
+                current_winner = (sum, &player.name);
+            }            
         }
-
-        current_winner[1]
+        current_winner.1.to_string()
     }
 
 }
 
 fn main() {
+    let mut player_vector = Vec::new();
+    let mut name = String::new();
+    loop {
+        io::stdin()
+            .read_line(&mut name)
+            .expect("Failed to read line");
+
+        name = name.to_lowercase();
+
+        strip_input(&mut name);
+        match name.as_str() {
+            "\n" => break,
+            _ => {
+                player_vector.push(Player {
+                    name: name,
+                    hand: Vec::new(),
+                    money: 100,
+                });
+            }
+        };
+    }
+
     let mut game_state = Game::new(vec![Player {
                                             name: "Patrick".to_string(),
                                             hand: Vec::new(),
@@ -169,13 +194,17 @@ fn main() {
                 println!("So I'm too lazy to implement betting at this moment, so we're gonna bet like 1 dollar");
                 let bet = 1;
                 'hitLoop: loop {
-
-                    if game_state.hit() == 0 {
-                        break;
-                    }
                     game_state.deal();
 
                     game_state.print_cards();
+                    if game_state.hit() == 0 {
+                        // Give the user a sec to process their loss and weep
+                        thread::sleep(Duration::from_secs(2));
+                        // Since the user is a loser, they lose all claim to their cards! (Hence sum = 0)
+                        game_state.get_player().hand = Vec::new();
+                        break;
+                    }
+
                     let mut cont = String::new();
 
                     println!("Hit again? [y]es or [n]o?");
@@ -201,7 +230,9 @@ fn main() {
                 // Empty the hand now
                 // game_state.get_player().hand = Vec::new();
                 // Move to the next player
-                game_state.next_player();
+                if game_state.next_player() == 0 {
+                    break
+                }
 
             },
             Choice::Stay => {
@@ -212,10 +243,12 @@ fn main() {
             _ => break,
         }
     }
+
+    // This is the end of the game!
+    println!("And the winner is... {}!", game_state.win_check());
 }
 
 fn strip_input(s: &mut String) {
-    s.pop();
     s.pop();
 }
 
@@ -256,11 +289,15 @@ fn render_card(card: &Card) -> String {
             number)
 }
 
-fn sum_cards(cards: &Vec<Card>) -> u32 {
-    let mut sum = 0;
+fn sum_cards(cards: &Vec<Card>) -> i32 {
+    let mut sum: i32 = 0;
     for card in cards{
+        // Face cards count as 10!
+        if card.rank > 10 {
+            sum += 10;
+        } else {
         sum += card.rank;
+        }
     }
-    println!("{}", sum);
     sum
 }
